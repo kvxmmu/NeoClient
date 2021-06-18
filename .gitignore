@@ -1,5 +1,6 @@
 .idea/
 cmake-build-debug/
+build/
 
 # Prerequisites
 *.d
@@ -26,7 +27,6 @@ cmake-build-debug/
 # Compiled Static libraries
 *.lai
 *.la
-*.a
 *.lib
 
 # Executables
