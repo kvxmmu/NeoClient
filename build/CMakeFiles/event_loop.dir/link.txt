@@ -1,0 +1,2 @@
+/usr/bin/ar qc libevent_loop.a CMakeFiles/event_loop.dir/src/loop/selector.cpp.o CMakeFiles/event_loop.dir/src/loop/loop.cpp.o
+/usr/bin/ranlib libevent_loop.a
