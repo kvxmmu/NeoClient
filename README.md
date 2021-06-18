@@ -22,7 +22,7 @@ FreeGrok client example
 - Linux
 
 
-WARNING: precompiled windows dll library is only available on x64 arch, otherwise crosscompile lizstd by yourself
+WARNING: precompiled windows dll library is only available on x64 arch, otherwise crosscompile libzstd by yourself
 
 
 # MacOS compatibility
