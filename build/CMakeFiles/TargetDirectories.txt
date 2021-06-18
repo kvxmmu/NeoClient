@@ -1,5 +1,0 @@
-/home/nero/CLionProjects/opengrok_client/build/CMakeFiles/rebuild_cache.dir
-/home/nero/CLionProjects/opengrok_client/build/CMakeFiles/edit_cache.dir
-/home/nero/CLionProjects/opengrok_client/build/CMakeFiles/grokclient.dir
-/home/nero/CLionProjects/opengrok_client/build/CMakeFiles/client_lib.dir
-/home/nero/CLionProjects/opengrok_client/build/CMakeFiles/event_loop.dir

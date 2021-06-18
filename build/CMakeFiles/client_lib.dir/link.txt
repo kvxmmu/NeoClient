@@ -1,2 +1,0 @@
-/usr/bin/ar qc libclient_lib.a CMakeFiles/client_lib.dir/src/grokclient/client.cpp.o CMakeFiles/client_lib.dir/src/grokclient/proxy_client.cpp.o
-/usr/bin/ranlib libclient_lib.a

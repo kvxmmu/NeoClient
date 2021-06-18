@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/grokclient.dir/main.cpp.o -o grokclient  libclient_lib.a libevent_loop.a -lzstd 
