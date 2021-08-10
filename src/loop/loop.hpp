@@ -10,8 +10,8 @@
 #include "loop_exceptions.hpp"
 
 #include <unordered_map>
-#include <map>
 #include <deque>
+#include <memory>
 
 #define EVENTS_R EPOLLIN | EPOLLHUP | EPOLLRDHUP
 #define EVENT_WRITE EPOLLOUT
@@ -19,6 +19,11 @@
 
 class WriteItem {
 public:
+    enum WriteType {
+        SENDFILE,
+        SENDBUFFER
+    };
+
     char *buffer;
     size_t length;
     size_t sent;
@@ -28,6 +33,16 @@ public:
     }
 
     WriteItem(const WriteItem &) = default;
+
+    void merge_buffers(const char *src, size_t n_length) {
+        auto n_buf = new char[length+n_length];
+        memcpy(n_buf, buffer, length);
+        memcpy(n_buf+length, src, n_length);
+
+        delete[] buffer;
+        buffer = n_buf;
+        length += n_length;
+    }
 };
 
 class ReadItem {
@@ -88,7 +103,7 @@ public:
 
 class Loop : public IErrorHandler {
 private:
-    std::unordered_map<sock_t, Queues> queues;
+    std::unordered_map<sock_t, std::shared_ptr<Queues>> queues;
     std::unordered_map<sock_t, IObserver *> observers;
     std::unordered_map<sock_t, IObserver *> linked_clients;
 

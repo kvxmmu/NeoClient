@@ -5,11 +5,17 @@
 #include "loop.hpp"
 
 Queues &Loop::gather_queue(sock_t fd) {
-    if (queues.find(fd) == queues.end()) {
-        queues[fd] = Queues();
+    auto it = queues.find(fd);
+    std::shared_ptr<Queues> q;
+
+    if (it == queues.end()) {
+        q = std::make_shared<Queues>();
+        queues[fd] = q;
+    } else {
+        q = it->second;
     }
 
-    return queues[fd];
+    return *q;
 }
 
 void Loop::link_client(sock_t sock, IObserver *observer) {
@@ -25,8 +31,10 @@ void Loop::unlink_client(sock_t sock, IObserver *observer,
 
 void Loop::force_disconnect(sock_t client, bool erase,
                             bool call_on_disconnect) {
-    if (linked_clients.find(client) != linked_clients.end()) {
-        auto &observer = linked_clients[client];
+    auto linked_clients_it = linked_clients.find(client);
+
+    if (linked_clients_it != linked_clients.end()) {
+        auto &observer = linked_clients_it->second;
 
         if (call_on_disconnect) observer->on_disconnect(client);
 
@@ -37,11 +45,14 @@ void Loop::force_disconnect(sock_t client, bool erase,
         tcp_close(client);
 
         return;
-    } else if (observers.find(client) == observers.end()) {
+    }
+
+    auto observers_it = observers.find(client);
+    if (observers_it == observers.end()) {
         return;
     }
 
-    auto observer = observers.at(client);
+    auto observer = observers_it->second;
     observer->on_disconnect(client);
 
     this->remove_observer(observer);
@@ -167,6 +178,11 @@ void Loop::send(sock_t sock, char *buffer, size_t length) {
 
     if (write_queue.empty()) {
         selector.modify(sock, EVENTS_R | EVENT_WRITE);
+    } else {
+        auto &front = write_queue.front();
+        front.merge_buffers(buffer, length); // merge buffers to reduce syscalls count
+
+        return;
     }
 
     write_queue.emplace_back(buffer, length);
@@ -221,6 +237,25 @@ void Loop::run() {
                 this->force_disconnect(fd, true, true);
 
                 break;
+            } else if (events & EPOLLOUT) {
+                decltype(observers)::iterator obs_iter;
+
+                if ((obs_iter = observers.find(fd)) != observers.end()) {
+                    // client connection
+                    auto &observer = obs_iter->second;
+
+                    if (!observer->is_connected) {
+                        observer->on_connect();
+                        observer->is_connected = true;
+
+                        selector.modify(fd, EVENTS_R);
+                        observer->post_connect(fd);
+
+                        continue;
+                    }
+                }
+
+                this->perform_write_queue(fd);
             }
 
             if (events & EPOLLIN) {
@@ -243,27 +278,6 @@ void Loop::run() {
 
                     this->perform_read_queue(fd, linked_observer);
                 }
-            }
-
-            if (events & EPOLLOUT) {
-                decltype(observers)::iterator obs_iter;
-
-                if ((obs_iter = observers.find(fd)) != observers.end()) {
-                    // client connection
-                    auto &observer = obs_iter->second;
-
-                    if (!observer->is_connected) {
-                        observer->on_connect();
-                        observer->is_connected = true;
-
-                        selector.modify(fd, EVENTS_R);
-                        observer->post_connect(fd);
-
-                        continue;
-                    }
-                }
-
-                this->perform_write_queue(fd);
             }
         }
     }
