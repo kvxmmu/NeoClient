@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
         auto local_port =  port_arg.getValue();
         auto listen_value = listen_port.getValue();
 
-        if (!is_valid_port(gport) || !is_valid_port(listen_value)
+        if (!is_valid_port(gport) || (listen_value != 0 && !is_valid_port(listen_value))
             || !is_valid_port(local_port)) {
             std::cerr << "[FreeGrok] Invalid port" << std::endl;
 
