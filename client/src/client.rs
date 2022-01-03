@@ -209,6 +209,7 @@ pub async fn client_connector(tx: &Sender<MainRequest>, mut rx: Receiver<Connect
 
             received = stream.read(&mut buf) => {
                 if received.as_ref().unwrap_or(&0) == &0 {
+                    tx.send(MainRequest::Disconnect(id)).await.unwrap_or_default();
                     break;
                 }
 

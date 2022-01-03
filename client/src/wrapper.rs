@@ -19,7 +19,8 @@ pub fn ok_or_exit<T>(result: std::io::Result<T>) -> T {
 #[async_trait::async_trait]
 pub trait ProtocolExt {
     async fn read_type(&mut self) -> (PacketType, Flags);
-    async fn write_simple(&mut self, type_: PacketType, buf: Option<&[u8]>);
+    async fn write_simple(&mut self, type_: PacketType, buf: Option<&[u8]>,
+                          flags: Flags);
 
     async fn read_variadic(&mut self, flags: Flags, need: Flags) -> u16;
     async fn authorize(&mut self, magic: &str);
@@ -34,11 +35,14 @@ pub trait ProtocolExt {
     
     async fn write_client_id(&mut self, type_: PacketType, client_id: ClientId) {
         let mut buf: [u8; 2] = [0; 2];
-        let offset = if serialize_variadic(&mut buf, client_id) {
-            1
-        } else { 2 };
+        let flags;
 
-        self.write_simple(type_, Some(&buf[..offset])).await
+        let offset = if serialize_variadic(&mut buf, client_id) {
+            flags = protocol::C_SHORT;
+            1
+        } else { flags = 0; 2 };
+
+        self.write_simple(type_, Some(&buf[..offset]), flags).await
     }
 
     async fn write_connect(&mut self, client_id: ClientId) {
@@ -60,7 +64,7 @@ pub trait ProtocolExt {
     async fn request_server(&mut self, port: u16) {
         let buf = [(port & 0xff) as u8, (port >> 8) as u8];
 
-        self.write_simple(protocol::SERVER, Some(&buf)).await;
+        self.write_simple(protocol::SERVER, Some(&buf), 0).await;
     }
 
     async fn read_client_id(&mut self, flags: Flags) -> ClientId {
@@ -72,7 +76,7 @@ pub trait ProtocolExt {
     }
 
     async fn request_ping(&mut self) {
-        self.write_simple(protocol::PING, None).await;
+        self.write_simple(protocol::PING, None, 0).await;
     }
 }
 
@@ -82,8 +86,8 @@ impl ProtocolExt for TcpStream {
         unpack_type(ok_or_exit(self.read_u8().await))
     }
 
-    async fn write_simple(&mut self, type_: PacketType, buf: Option<&[u8]>) {
-        ok_or_exit(self.write_u8( pack_type(type_, 0) ).await);
+    async fn write_simple(&mut self, type_: PacketType, buf: Option<&[u8]>, flags: Flags) {
+        ok_or_exit(self.write_u8( pack_type(type_, flags) ).await);
         if buf.is_some() {
             ok_or_exit(self.write_all(buf.unwrap()).await);
         }
