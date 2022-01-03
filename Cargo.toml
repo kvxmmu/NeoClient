@@ -1,0 +1,13 @@
+[package]
+name = "neogrok"
+version = "0.1.1"
+edition = "2021"
+authors = ["Nero"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+client = { path = "client" }
+
+clap = { version = "3.0.0", features = ["derive"] }
+tokio = { version = "1.15.0", features = ["full"] }
