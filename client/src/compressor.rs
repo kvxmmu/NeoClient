@@ -1,47 +1,78 @@
 use {
-    zstd_sys::{ZSTD_decompress, ZSTD_compress,
-               ZSTD_isError}
+    zstd_sys::{
+        ZSTD_decompress,
+        ZSTD_compress,
+        ZSTD_isError,
+    },
+
+    std::{
+        intrinsics::{unlikely, likely}
+    }
 };
 
-
-pub fn decompress_data(src: &[u8]) -> ([u8; 4096], usize) {
-    let mut buf: [u8; 4096] = [0; 4096];
-    let length;
+pub fn decompress(
+    src: Vec<u8>,
+    max_buf: usize,
+) -> Option<(Vec<u8>, usize)> {
+    let mut decompressed = vec![0; max_buf];
+    let new_size;
 
     unsafe {
-        let src_ptr = src.as_ptr() as *const std::ffi::c_void;
-        let dst_ptr = buf.as_mut_ptr() as *mut std::ffi::c_void;
+        new_size = ZSTD_decompress(
+            decompressed.as_mut_ptr() as *mut std::ffi::c_void,
+            max_buf,
 
-        length = ZSTD_decompress(dst_ptr, 4096,
-                                 src_ptr, src.len());
-        if ZSTD_isError(length) == 1 {
-            return (buf, 0);
+            src.as_ptr() as *const std::ffi::c_void,
+            src.len()
+        );
+
+        if unlikely(ZSTD_isError(new_size) == 1) {
+            return None;
         }
-    };
-    
-    (buf, length)
+    }
+
+    Some(
+        (decompressed, new_size)
+    )
 }
 
-pub fn compress_data(data: &[u8], level: i32,
-                     minimal_profit: f32) -> ([u8; 4096], usize) {
-    let mut buf: [u8; 4096] = [0; 4096];
-    let length;
+pub fn compress(
+    src: &[u8],
+    min_profit: f32,
+    level: i32,
+) -> Option<(Vec<u8>, usize)> {
+    let length = src.len();
+    let mut buf = vec![0; length];
+    let new_size;
+    let percents;
 
     unsafe {
-        let src = data.as_ptr() as *const std::ffi::c_void;
-        let dst = buf.as_mut_ptr() as *mut std::ffi::c_void;
+        new_size = ZSTD_compress(
+            buf.as_mut_ptr() as *mut std::ffi::c_void,
+            length,
 
-        length = ZSTD_compress(dst, 4096,
-                               src, data.len(), level);
-        if (ZSTD_isError(length) == 1) || (length >= data.len()) {
-            return (buf, 0);
+            src.as_ptr() as *const std::ffi::c_void,
+            src.len(),
+
+            level
+        );
+
+        if (ZSTD_isError(new_size) == 1) || (new_size == length) {
+            return None;
+        } else if likely(new_size < length) {
+            percents = (new_size as f32) * 100.0 / (length as f32);
+
+            if min_profit > (100.0 - percents) {
+                return None;  // Compression will not make sense
+            }
+        } else {
+            return None;
         }
+    }
 
-        let threshold = (data.len() as f32) / 100.0f32 * minimal_profit;
-        if (threshold as usize) <= (data.len() - length) {
-            return (buf, length);
-        }
-    };
+    log::debug!("{} compressed to {} ({}% from original size)", length, new_size, percents as u64);
 
-    (buf, 0)
+    Some(
+        (buf, new_size)
+    )
 }
