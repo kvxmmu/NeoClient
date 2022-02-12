@@ -7,11 +7,11 @@ use {
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct ConnectArgs {
-    // Remote NeoGrok address
+    // Remote NeoGrok address in domain[:port] format
     #[clap(short, long)]
     remote: String,
 
-    /// Local server address
+    /// Local server address in domain[:port] format
     #[clap(short, long)]
     local: String,
 
