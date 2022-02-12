@@ -1,11 +1,16 @@
 use {
-    crate::serializer::ClientId,
-    std::collections::VecDeque
+    crate::{
+        serializer::ClientId
+    },
+
+    std::{
+        collections::BTreeSet
+    }
 };
 
 pub struct IDPool {
-    pub deq: VecDeque<ClientId>,
-    pub last: ClientId
+    pub deq: BTreeSet<ClientId>,
+    pub last: ClientId,
 }
 
 impl IDPool {
@@ -16,17 +21,21 @@ impl IDPool {
 
             was
         } else {
-            self.deq.pop_back().unwrap()
+            let value = *self.deq.iter().next().unwrap();
+            self.deq.remove(&value);
+
+            value
         }
     }
 
     pub fn return_id(&mut self, id: ClientId) {
-        self.deq.push_back(id);
+        self.deq.insert(id);
     }
 
     pub fn new(start: ClientId) -> IDPool {
-        IDPool{last: start, deq: Default::default()}
+        IDPool {
+            last: start,
+            deq: Default::default(),
+        }
     }
 }
-
-

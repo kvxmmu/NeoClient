@@ -1,3 +1,3 @@
 pub use crate::{
-    client::*, wrapper::*
+    client::*,
 };
