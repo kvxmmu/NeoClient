@@ -39,7 +39,7 @@ struct ConnectArgs {
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "debug");
+        std::env::set_var("RUST_LOG", "info");
     }
 
     let mut args = ConnectArgs::parse();

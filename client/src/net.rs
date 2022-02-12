@@ -187,7 +187,7 @@ pub async fn forward_packet(
     let (result, buf) = tokio::task::spawn_blocking(move || {
         (
             compress(
-                &buf,
+                &buf[..length as usize],
                 min_profit,
                 level
             ),

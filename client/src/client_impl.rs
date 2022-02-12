@@ -1,7 +1,6 @@
 use {
     tokio::{
         net::TcpStream,
-        io::{AsyncWriteExt, AsyncReadExt},
 
         sync::{
             mpsc::{UnboundedSender, unbounded_channel},
@@ -55,6 +54,7 @@ pub async fn handle_server(
 
             let master = master.clone();
             let (tx, rx) = unbounded_channel();
+            session.channels.add_client(id, tx);
 
             tokio::spawn(async move {
                 run_proxy(
@@ -64,6 +64,21 @@ pub async fn handle_server(
                     id
                 ).await;
             });
+        },
+
+        Frame::Packet(id, buf, size) => {
+            if !session.channels.send(id, SlaveFrame::Forward(buf, size)) {
+                log::error!("Failed to forward packet to the ID#{} ({})", id, local);
+                return net::send_disconnect(stream, id).await;
+            }
+        },
+
+        Frame::Disconnected(id) => {
+            session.channels.send(
+                id, SlaveFrame::ForceDisconnect,
+            );
+            log::info!("ID#{} is disconnected from the {}", local, id);
+            session.channels.remove_client(id);
         },
 
         // State functionality

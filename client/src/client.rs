@@ -1,7 +1,6 @@
 use {
     tokio::{
         net::TcpStream,
-        io::{AsyncWriteExt, AsyncReadExt},
 
         sync::{
             mpsc::{
@@ -63,7 +62,13 @@ pub async fn run_app(
                 let frame = ok_or_exit(read_frame(type_, flags, &mut stream).await);
 
                 ok_or_exit(
-                    handle_server(&mut stream, &mut session, frame, &tx).await
+                    handle_server(
+                        &mut stream,
+                        &mut session,
+                        frame,
+                        &tx,
+                        &local,
+                    ).await
                 );
             },
 
@@ -74,7 +79,13 @@ pub async fn run_app(
                 }
 
                 ok_or_exit(
-                    handle_server(&mut stream, &mut session, Frame::HandleSlave(master_req.unwrap()), &tx).await
+                    handle_server(
+                        &mut stream,
+                        &mut session,
+                        Frame::HandleSlave(master_req.unwrap()),
+                        &tx,
+                        &local,
+                    ).await
                 );
             },
         }
