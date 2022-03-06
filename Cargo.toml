@@ -1,0 +1,24 @@
+[package]
+name = "neogrok"
+authors = ["nero"]
+description = "Simple NeoGrok(https://github.com/kvxmmu/neogrok) client implementation"
+
+version = "1.2.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.release]
+lto = true
+strip = true
+opt-level = 3
+
+[dependencies]
+tokio = { version = "1.17.0", features = ["rt", "rt-multi-thread"] }
+
+pretty_env_logger = "0.4.0"
+log = "0.4.14"
+clap = { version = "3.0.14", features = ["derive"] }
+
+client = { path = "client" }
+
