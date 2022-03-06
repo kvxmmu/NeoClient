@@ -1,6 +1,6 @@
 # NeoGrok client
 
-Stupidly simple [NeoGrok](https://github.com/kvxmmu/neogrok) client
+Stupidly simple [NeoGrok](http://cloud.neroinhell.ru:2022/nero/neogrok) client
 
 # Usage
 
