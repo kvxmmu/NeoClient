@@ -6,7 +6,7 @@ use {
 #[derive(Debug)]
 pub enum Frame {
     Error(u8),
-    CretedTCP(u16),
+    CreatedTCP(u16),
     Pong(String),
 
     Connected(ClientId),

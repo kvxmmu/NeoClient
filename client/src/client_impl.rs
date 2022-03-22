@@ -113,7 +113,7 @@ pub async fn handle_server(
             }
         },
 
-        Frame::CretedTCP(port) => {
+        Frame::CreatedTCP(port) => {
             log::info!("Server created on port {}", port);
         },
 

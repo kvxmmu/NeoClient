@@ -81,7 +81,7 @@ pub async fn read_frame(
         },
 
         protocol::SERVER        => {
-            Frame::CretedTCP(
+            Frame::CreatedTCP(
                 stream.read_u16_le().await?
             )
         },
