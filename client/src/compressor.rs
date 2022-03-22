@@ -1,14 +1,29 @@
 use {
     zstd_sys::{
-        ZSTD_decompress,
-        ZSTD_compress,
+        ZSTD_decompressDCtx,
+        ZSTD_compressCCtx,
         ZSTD_isError,
+        
+        ZSTD_CCtx,
+        ZSTD_DCtx,
+
+        ZSTD_createDCtx,
+        ZSTD_createCCtx
     },
 
     std::{
-        intrinsics::{unlikely, likely}
-    }
+        intrinsics::unlikely,
+        thread_local,
+    },
+
+    once_cell::sync::Lazy
 };
+
+#[thread_local]
+static mut THREAD_CCTX: Lazy<Box<ZSTD_CCtx>> = Lazy::new(|| unsafe { Box::from_raw(ZSTD_createCCtx()) });
+
+#[thread_local]
+static mut THREAD_DCTX: Lazy<Box<ZSTD_DCtx>> = Lazy::new(|| unsafe { Box::from_raw(ZSTD_createDCtx()) });
 
 pub fn decompress(
     src: Vec<u8>,
@@ -17,8 +32,13 @@ pub fn decompress(
     let mut decompressed = vec![0; max_buf];
     let new_size;
 
+    let dctx_ptr = unsafe {
+        THREAD_DCTX.as_mut() as *mut ZSTD_DCtx
+    };
+
     unsafe {
-        new_size = ZSTD_decompress(
+        new_size = ZSTD_decompressDCtx(
+            dctx_ptr,
             decompressed.as_mut_ptr() as *mut std::ffi::c_void,
             max_buf,
 
@@ -46,8 +66,13 @@ pub fn compress(
     let new_size;
     let percents;
 
+    let cctx = unsafe {
+        THREAD_CCTX.as_mut() as *mut ZSTD_CCtx
+    };
+
     unsafe {
-        new_size = ZSTD_compress(
+        new_size = ZSTD_compressCCtx(
+            cctx,
             buf.as_mut_ptr() as *mut std::ffi::c_void,
             length,
 
@@ -57,9 +82,9 @@ pub fn compress(
             level
         );
 
-        if (ZSTD_isError(new_size) == 1) || (new_size == length) {
+        if unlikely((ZSTD_isError(new_size) == 1) || (new_size == length)) {
             return None;
-        } else if likely(new_size < length) {
+        } else if new_size < length {
             percents = (new_size as f32) * 100.0 / (length as f32);
 
             if min_profit > (100.0 - percents) {
