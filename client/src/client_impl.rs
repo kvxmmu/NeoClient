@@ -77,7 +77,7 @@ pub async fn handle_server(
             session.channels.send(
                 id, SlaveFrame::ForceDisconnect,
             );
-            log::info!("ID#{} is disconnected from the {}", local, id);
+            log::info!("ID#{} is disconnected from the {}", id, local);
             session.channels.remove_client(id);
         },
 
