@@ -1,62 +1,91 @@
 use {
-    clap::Parser,
-    client::prelude::*,
-    std::time::Duration,
+    clap::{Parser, Subcommand},
+    client::{
+        runner::tcp::*,
+
+        compression::*,
+        buffer::*,
+    },
+    num_cpus::get as logical_cpu_number,
+    tokio::runtime::Builder
 };
 
-#[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
-struct ConnectArgs {
-    // Remote NeoGrok address in domain[:port] format
-    #[clap(short, long)]
+#[derive(Debug, Parser)]
+struct Args {
+    /// Remote NeoGrok server, e.g. neogrok.someserver.su
+    #[clap(long, short)]
     remote: String,
 
-    /// Local server address in domain[:port] format
-    #[clap(short, long)]
-    local: String,
-
-    /// Port to be requested
-    #[clap(short, long, default_value_t = 0)]
-    port: u16,
-
-    /// Local server address
-    #[clap(short, long)]
+    /// NeoGrok server authorization magic
+    #[clap(long, short)]
     magic: Option<String>,
 
-    /// Minimal compression profit in percents(difference between original and compressed size in percent representation)
-    #[clap(long, default_value_t = 5.0)]
+    /// ZStandard compression level, from 1 to 10
+    #[clap(long)]
+    #[clap(default_value_t = 10)]
+    compression_level: u8,
+
+    /// ZStandard compression minimal profit
+    /// this means packet will be sent compressed if
+    /// After compression data was enshorted decreased by N percents
+    /// e.g. --compression-profit 2.5
+    /// Will be interpreted as 2.5 percents
+    #[clap(long)]
+    #[clap(default_value_t = 5.0)]
     compression_profit: f32,
 
-    /// Overwritten compression level (0 - for synchronization with server)
-    #[clap(long, default_value_t = 0)]
-    compression_level: i32,
+    /// Network socket buffer size in bytes per proxy client
+    /// for read
+    #[clap(long)]
+    #[clap(default_value_t = 4096)]
+    pub buffer_read: usize,
 
-    /// Local server connect timeout
-    #[clap(short, long, default_value_t = 5)]
-    timeout: u64,
+    /// Network socket buffer size in bytes per proxy client
+    /// for write
+    #[clap(long)]
+    #[clap(default_value_t = 512)]
+    pub buffer_write: usize,
+
+    /// Minimal threshold for compression
+    /// This means that client will try compress payload
+    /// if its size greater or equal to N bytes
+    #[clap(long)]
+    #[clap(default_value_t = 50)]
+    compression_threshold: usize,
+
+    #[clap(subcommand)]
+    subcommands: Subcommands,
 }
 
-#[tokio::main]
-async fn main() -> std::io::Result<()> {
-    if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "info");
-    }
+#[derive(Debug, Subcommand)]
+enum Subcommands {
+    /// Create TCP proxy
+    Tcp {
+        /// Local server, e.g. localhost:25565
+        local: String,
 
-    let mut args = ConnectArgs::parse();
-    if !args.remote.contains(':') {
+        /// Remote server port to bind
+        #[clap(long, short)]
+        #[clap(default_value_t = 0)]
+        port: u16,
+    }
+}
+
+fn main() {
+    let mut args = Args::parse();
+    if !args.remote.contains(":") {
         args.remote.push_str(":6567");
     }
 
-    pretty_env_logger::init();
-    log::debug!("Running in debug mode");
+    let compression = Compression {
+        profit: args.compression_profit,
+        level: args.compression_level as u32,
+        threshold: args.compression_threshold,
+    };
+    let buffer_size = BufferSize {
+        read: args.buffer_read,
+        write: args.buffer_write
+    };
 
-    run_app(
-        args.compression_profit,
-        args.compression_level,
-        args.remote,
-        args.local,
-        args.magic,
-        args.port,
-        Duration::from_secs(args.timeout)
-    ).await
+    println!("{:#?}", args);
 }
