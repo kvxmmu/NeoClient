@@ -1,13 +1,19 @@
 use {
     clap::{Parser, Subcommand},
-    client::{
-        runner::tcp::*,
-
-        compression::*,
-        buffer::*,
-    },
     num_cpus::get as logical_cpu_number,
-    tokio::runtime::Builder
+    tokio::runtime::Builder,
+
+    client::{
+        tcp::runner::*,
+        compression::*,
+        *,
+    },
+
+    anyhow::Result,
+
+    std::{
+        env::{var, set_var}
+    }
 };
 
 #[derive(Debug, Parser)]
@@ -40,6 +46,9 @@ struct Args {
     #[clap(default_value_t = 4096)]
     pub buffer_read: usize,
 
+    /// Number of workers for multithreaded runtime
+    pub workers: Option<usize>,
+
     /// Network socket buffer size in bytes per proxy client
     /// for write
     #[clap(long)]
@@ -71,21 +80,47 @@ enum Subcommands {
     }
 }
 
-fn main() {
+fn main() -> Result<()> {
     let mut args = Args::parse();
     if !args.remote.contains(":") {
         args.remote.push_str(":6567");
     }
 
+    if var("NEOGROK_LOG").is_err() {
+        set_var("NEOGROK_LOG", "debug");
+    }
+
+    pretty_env_logger::init_custom_env("NEOGROK_LOG");
+
+    let workers = args.workers.unwrap_or(logical_cpu_number());
+    let rt = Builder::new_multi_thread()
+                    .enable_all()
+                    .thread_name("NeoGrok client worker")
+                    .worker_threads(workers)
+                    .build()
+                    .expect("Failed to create tokio runtime");
     let compression = Compression {
-        profit: args.compression_profit,
-        level: args.compression_level as u32,
-        threshold: args.compression_threshold,
+        level: args.compression_level as i32,
+        profit: args.compression_profit / 100.0,
+        threshold: args.compression_threshold
     };
     let buffer_size = BufferSize {
         read: args.buffer_read,
-        write: args.buffer_write
+        write: 1
     };
 
-    println!("{:#?}", args);
+    match args.subcommands {
+        Subcommands::Tcp { local, port } => {
+            rt.block_on(run_tcp_client(
+                local,
+                args.remote,
+                args.magic,
+                port,
+                buffer_size,
+                compression
+            ))?;
+        }
+    }
+
+    Ok(())
 }

@@ -22,7 +22,7 @@ impl IDPool {
         if let Some(id) = self.deq.lock().await.pop_front() {
             id
         } else {
-            self.last.fetch_add(1, Ordering::Relaxed)
+            self.last.fetch_add(1, Ordering::SeqCst)
         }
     }
 

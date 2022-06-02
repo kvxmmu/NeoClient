@@ -1,0 +1,17 @@
+[package]
+name = "pipeline"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait = "0.1.53"
+tokio = { version = "1.18.2", features = [
+    "rt", "net",
+    "io-util", "sync",
+] }
+
+anyhow = "1.0.57"
+serde = { version = "1.0.137", features = ["derive"] }
+

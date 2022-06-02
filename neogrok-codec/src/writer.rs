@@ -29,6 +29,16 @@ impl<WriteHalf: AsyncWriteExt + Unpin> CodecWriter<WriteHalf> {
             .await
     }
 
+    pub async fn write_authorize(
+        &mut self,
+        data: &str
+    ) -> io::Result<()> {
+        self.inner.write_u8(pack_type(AUTH, 0)).await?;
+        self.write_string(data).await?;
+        self.flush()
+            .await
+    }
+
     pub async fn write_update_rights(
         &mut self,
         rights: u8

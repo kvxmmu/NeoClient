@@ -1,6 +1,4 @@
-pub mod client;
-
-pub mod runner;
-
-pub mod buffer;
 pub mod compression;
+pub mod tcp;
+
+pub use pipeline::ext::{BufferSize, IntoBuffered};

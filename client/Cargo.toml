@@ -6,4 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+log = "0.4.17"
 neogrok-codec = { path = "../neogrok-codec" }
+pipeline = { path = "../pipeline" }
+tokio = { version = "1.18.2", features = ["net", "rt", "sync", "macros"] }
+zstd-wrapper = { path = "../zstd-wrapper" }

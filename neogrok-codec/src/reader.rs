@@ -111,6 +111,8 @@ impl<OwnedHalf: AsyncReadExt + Unpin> CodecReader<OwnedHalf> {
                 }
             },
 
+            ERROR => NFrame::Error { code: self.inner.read_u8().await? },
+
             _ => NFrame::Error { code: UNKNOWN_PKT }
         };
 
