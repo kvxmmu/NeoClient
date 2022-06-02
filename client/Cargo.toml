@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 log = "0.4.17"
-neogrok-codec = { path = "../neogrok-codec" }
-pipeline = { path = "../pipeline" }
+neogrok-codec = { git = "https://git.nerodono.su/NeoGrok/neogrok-codec.git" }
+pipeline = { git = "https://git.nerodono.su/NeoGrok/pipeline.git" }
 tokio = { version = "1.18.2", features = ["net", "rt", "sync", "macros"] }
-zstd-wrapper = { path = "../zstd-wrapper" }
