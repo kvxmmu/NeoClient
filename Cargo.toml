@@ -5,6 +5,11 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
+
 [dependencies]
 clap = { version = "3.1.18", features = ["derive"] }
 tokio = { version = "1.18.2", features = ["rt", "rt-multi-thread"] }

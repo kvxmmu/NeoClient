@@ -23,13 +23,16 @@ use {
 };
 
 pub struct TcpConsumer {
-    writer: Writer,
-    address: SocketAddr,
+    pub writer: Writer,
+    pub address: SocketAddr,
 
-    compression: Compression,
+    pub compression: Compression,
+    pub use_overrides: bool,
 
-    magic: Option<String>,
-    port: u16,
+    pub magic: Option<String>,
+    pub port: u16,
+
+    pub local: String,
 }
 
 #[async_trait]
@@ -40,6 +43,9 @@ impl PipelineConsumer for TcpConsumer {
         mut self,
         mut stream: UnboundedReceiver<Self::Frame>
     ) -> Result<()> {
+        let mut created_server = false;
+        let mut authorized = true;
+
         let mut codec = CodecWriter::new(
             &mut self.writer,
             self.compression.level,
@@ -52,22 +58,59 @@ impl PipelineConsumer for TcpConsumer {
             codec.write_authorize(
                 magic
             ).await?;
+
+            authorized = false;
         }
 
         loop {
-            let frame = if let Some(fr) = stream.recv().await {
-                fr
+            let frame = if let Some(f) = stream.recv().await {
+                f
             } else {
                 break;
             };
 
             match frame {
+                NFrame::SyncResponse {
+                    threshold,
+                    level,
+                    profit
+                } => {
+                    codec.replace_cctx(
+                        threshold as usize,
+                        profit,
+                        level as i32
+                    );
+
+                    log::info!("Using server compression settings:");
+                    log::info!("    Algorithm: ZStandard");
+                    log::info!("    Level: {}", level);
+                    log::info!("    Profit: {}%", profit);
+                    log::info!("    Threshold: {}", threshold);
+                },
+
+                NFrame::UpdateRights { new_rights } => {
+                    log::info!("Received rights: {}", new_rights.show_rights());
+
+                    authorized = true;
+                    if !self.use_overrides {
+                        codec.write_sync_request().await?;
+                    }
+                },
+
                 NFrame::PingResponse { name } => {
                     log::info!("Ping received: {}", name);
+
+                    if authorized {
+                        codec.write_sync_request().await?;
+                    }
                 },
 
                 NFrame::Error { code } => {
                     log::info!("An error occurred: {}", code.to_error_string());
+
+                    if code == ACCESS_DENIED {
+                        break;
+                    }
                 },
 
                 frame => {
@@ -77,24 +120,6 @@ impl PipelineConsumer for TcpConsumer {
         }
 
         Ok(())
-    }
-}
-
-impl TcpConsumer {
-    pub fn new(
-        writer: Writer,
-        address: SocketAddr,
-
-        port: u16,
-
-        magic: Option<String>,
-        compression: Compression,
-    ) -> Self {
-        Self { writer
-             , address
-             , compression
-             , port
-             , magic }
     }
 }
 

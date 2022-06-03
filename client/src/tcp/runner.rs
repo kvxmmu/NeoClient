@@ -27,6 +27,7 @@ pub async fn run_tcp_client(
     port: u16,
     buffer_size: BufferSize,
     compression: Compression,
+    synchronize: bool,
 ) -> Result<()> {
     log::info!("Connecting to the {}...", remote);
 
@@ -35,7 +36,8 @@ pub async fn run_tcp_client(
         compression,
         port,
         magic,
-        local
+        local,
+        !synchronize
     );
     let stream = TcpStream::connect(&remote).await?;
 

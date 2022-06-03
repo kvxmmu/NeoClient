@@ -25,6 +25,8 @@ pub struct TcpFactory {
     magic: Option<String>,
 
     local: String,
+
+    use_overrides: bool,
 }
 
 impl PipelineFactory for TcpFactory {
@@ -38,14 +40,19 @@ impl PipelineFactory for TcpFactory {
         address: SocketAddr,
     ) -> ProducerConsumerPair<Self::Producer, Self::Consumer> {
         ProducerConsumerPair {
-            producer: TcpProducer::new(reader, address.clone()),
-            consumer: TcpConsumer::new(
+            producer: TcpProducer::new(
+                reader,
+                address.clone()
+            ),
+            consumer: TcpConsumer {
                 writer,
                 address,
-                self.port,
-                self.magic.clone(),
-                self.compression.clone()
-            ),
+                compression: self.compression.clone(),
+                magic: self.magic.clone(),
+                port: self.port,
+                local: self.local.clone(),
+                use_overrides: self.use_overrides,
+            },
         }
     }
 
@@ -63,12 +70,15 @@ impl TcpFactory {
         port: u16,
         magic: Option<String>,
 
-        local: String
+        local: String,
+
+        use_overrides: bool,
     ) -> Self {
         Self { buffer_size
              , compression
              , port
              , magic
-             , local }
+             , local
+             , use_overrides }
     }
 }

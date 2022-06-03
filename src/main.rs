@@ -31,6 +31,11 @@ struct Args {
     #[clap(default_value_t = 10)]
     compression_level: u8,
 
+    /// Disable streaming synchronization with the server
+    /// (Synchronizes only once by default)
+    #[clap(long, short)]
+    dont_sync: bool,
+
     /// ZStandard compression minimal profit
     /// this means packet will be sent compressed if
     /// After compression data was enshorted decreased by N percents
@@ -117,7 +122,8 @@ fn main() -> Result<()> {
                 args.magic,
                 port,
                 buffer_size,
-                compression
+                compression,
+                !args.dont_sync
             ))?;
         }
     }
