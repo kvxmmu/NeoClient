@@ -92,7 +92,7 @@ fn main() -> Result<()> {
     }
 
     if var("NEOGROK_LOG").is_err() {
-        set_var("NEOGROK_LOG", "debug");
+        set_var("NEOGROK_LOG", "info");
     }
 
     pretty_env_logger::init_custom_env("NEOGROK_LOG");
