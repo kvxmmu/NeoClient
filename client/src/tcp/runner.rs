@@ -37,9 +37,11 @@ pub async fn run_tcp_client(
         port,
         magic,
         local,
+        remote.clone(),
         !synchronize
     );
     let stream = TcpStream::connect(&remote).await?;
+    log::debug!("Connected");
 
     run_tcp_connector(
         stream,

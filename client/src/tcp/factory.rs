@@ -9,12 +9,17 @@ use {
         tcp::{
             consumer::*,
             producer::*,
+
+            proxy::{
+                clients::*,
+            }
         },
 
         compression::*,
     },
 
     std::net::SocketAddr,
+    neogrok_codec::writer::CodecWriter,
 };
 
 pub struct TcpFactory {
@@ -25,6 +30,7 @@ pub struct TcpFactory {
     magic: Option<String>,
 
     local: String,
+    remote: String,
 
     use_overrides: bool,
 }
@@ -39,19 +45,31 @@ impl PipelineFactory for TcpFactory {
         writer: Writer,
         address: SocketAddr,
     ) -> ProducerConsumerPair<Self::Producer, Self::Consumer> {
+        let remote = (&self.remote[..self.remote.find(':').unwrap()]).to_owned();
+
         ProducerConsumerPair {
             producer: TcpProducer::new(
                 reader,
                 address.clone()
             ),
             consumer: TcpConsumer {
-                writer,
+                buffer_size: self.buffer_size.read,
+                writer: CodecWriter::new(
+                    writer,
+                    self.compression.level,
+                    self.compression.profit,
+                    self.compression.threshold
+                ),
                 address,
                 compression: self.compression.clone(),
                 magic: self.magic.clone(),
                 port: self.port,
                 local: self.local.clone(),
                 use_overrides: self.use_overrides,
+                remote,
+
+                authorized: true,
+                clients: ProxyClients::new()
             },
         }
     }
@@ -71,6 +89,7 @@ impl TcpFactory {
         magic: Option<String>,
 
         local: String,
+        remote: String,
 
         use_overrides: bool,
     ) -> Self {
@@ -79,6 +98,7 @@ impl TcpFactory {
              , port
              , magic
              , local
-             , use_overrides }
+             , use_overrides
+             , remote }
     }
 }
