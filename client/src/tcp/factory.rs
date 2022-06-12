@@ -7,8 +7,10 @@ use {
 
     crate::{
         tcp::{
-            consumer::*,
-            producer::*,
+            pipeline::{
+                consumer::*,
+                producer::*,
+            },
 
             proxy::{
                 clients::*,
