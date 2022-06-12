@@ -52,6 +52,7 @@ struct Args {
     pub buffer_read: usize,
 
     /// Number of workers for multithreaded runtime
+    #[clap(long, short)]
     pub workers: Option<usize>,
 
     /// Network socket buffer size in bytes per proxy client
