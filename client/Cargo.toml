@@ -13,5 +13,5 @@ neogrok-codec = { git = "https://git.nerodono.su/NeoGrok/neogrok-codec.git" }
 pipeline = { git = "https://git.nerodono.su/NeoGrok/pipeline.git" }
 idpool = { git = "https://git.nerodono.su/NeoGrok/idpool.git" }
 
-tokio = { version = "1.18.2", features = ["net", "rt", "sync", "macros"] }
+tokio = { version = "1.19.2", features = ["net", "rt", "sync", "macros"] }
 rustc-hash = "1.1.0"
