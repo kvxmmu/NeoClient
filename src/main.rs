@@ -98,7 +98,7 @@ fn main() -> Result<()> {
 
     pretty_env_logger::init_custom_env("NEOGROK_LOG");
 
-    let workers = args.workers.unwrap_or(logical_cpu_number());
+    let workers = args.workers.unwrap_or_else(logical_cpu_number);
     let rt = Builder::new_multi_thread()
                     .enable_all()
                     .thread_name("NeoGrok client worker")
