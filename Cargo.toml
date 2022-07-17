@@ -9,6 +9,7 @@ edition = "2021"
 opt-level = 3
 lto = true
 strip = true
+panic = "abort"
 
 [dependencies]
 clap = { version = "3.1.18", features = ["derive"] }
