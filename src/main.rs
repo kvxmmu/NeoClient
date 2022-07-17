@@ -10,11 +10,15 @@ use {
     },
 
     anyhow::Result,
+    mimalloc::MiMalloc,
 
     std::{
         env::{var, set_var}
     }
 };
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 #[derive(Debug, Parser)]
 struct Args {

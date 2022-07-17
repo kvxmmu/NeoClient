@@ -19,3 +19,4 @@ num_cpus = "1.13.1"
 client = { path = "client" }
 anyhow = "1.0.57"
 pretty_env_logger = "0.4.0"
+mimalloc = { version = "0.1.29", default-features = false }
